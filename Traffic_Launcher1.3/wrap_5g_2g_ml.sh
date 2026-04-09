@@ -1,0 +1,63 @@
+scp -r connection_script 172.16.10.23:/root/connection_script
+echo "=== 5G_ML connection load started at $(date) ===" | tee load_connection_5G_ML.txt
+plink -ssh -pw hrun*10 root@172.16.10.25 sudo sh -x /root/connection_script/5g_ml_connect.sh 2>&1 | tee -a load_connection_5G_ML.txt
+echo "=== 5G_ML connection load finished at $(date) ===" | tee -a load_connection_5G_ML.txt
+python3 no_wl.py /root/connection_script/5g_ml_connect.sh
+# Auto-read OUTPUT_NAME from no_wl.py
+FOLDER=$(grep '"OUTPUT_NAME"' no_wl.py 2>/dev/null | sed -n 's/.*"OUTPUT_NAME":[[:space:]]*"\([^"]*\)".*/\1/p')
+if [ -z "$FOLDER" ]; then
+    FOLDER="hello_1"
+fi
+# Use DD-MM-YYYY_HH-MM-SS format
+if [ -d "$FOLDER" ]; then
+    TIMESTAMP=$(date +"%d-%m-%Y_%H-%M-%S")
+    NEW_NAME="${FOLDER}_${TIMESTAMP}_5G_ML"
+    mv "$FOLDER" "$NEW_NAME"
+    echo "Folder renamed to: $NEW_NAME"
+    mv load_connection_5G_ML.txt "$NEW_NAME/" 2>/dev/null || true
+else
+    # Only look for candidates that don't already have _5G or _2G suffix
+    candidate=$(ls -td "${FOLDER}"* 2>/dev/null | grep -v '_5G$\|_2G$' | head -n1 || true)
+    if [ -n "$candidate" ] && [ -d "$candidate" ]; then
+        TIMESTAMP=$(date +"%d-%m-%Y_%H-%M-%S")
+        NEW_NAME="${FOLDER}_${TIMESTAMP}_5G"
+        mv "$candidate" "$NEW_NAME"
+        echo "Moved $candidate to: $NEW_NAME"
+        mv load_connection_5G_ML.txt "$NEW_NAME/" 2>/dev/null || true
+    else
+        echo "Warning: folder '$FOLDER' not found for 5G phase, skipping rename"
+    fi
+fi
+# scp sl_connect.sh 172.16.10.23:/root/TC1_ES10_1
+# scp 2G_connect.sh 172.16.10.23:/root/TC1_ES10_1
+echo "=== 2G_ML connection load started at $(date) ===" | tee load_connection_2G_ML.txt
+plink -ssh -pw hrun*10 root@172.16.10.25 sudo sh -x /root/connection_script/2g_ml_connect.sh 2>&1 | tee -a load_connection_2G_ML.txt
+echo "=== 2G_ML connection load finished at $(date) ===" | tee -a load_connection_2G_ML.txt
+python3 no_wl.py /root/connection_script/2g_ml_connect.sh
+# Auto-read OUTPUT_NAME from no_wl.py
+FOLDER=$(grep '"OUTPUT_NAME"' no_wl.py 2>/dev/null | sed -n 's/.*"OUTPUT_NAME":[[:space:]]*"\([^"]*\)".*/\1/p')
+if [ -z "$FOLDER" ]; then
+    FOLDER="hello_1"
+fi
+# Use DD-MM-YYYY_HH-MM-SS format
+if [ -d "$FOLDER" ]; then
+    TIMESTAMP=$(date +"%d-%m-%Y_%H-%M-%S")
+    NEW_NAME="${FOLDER}_${TIMESTAMP}_2G_ML"
+    mv "$FOLDER" "$NEW_NAME"
+    echo "Folder renamed to: $NEW_NAME"
+    mv load_connection_2G_ML.txt "$NEW_NAME/" 2>/dev/null || true
+else
+    # Only look for candidates that don't already have _5G or _2G suffix
+    candidate=$(ls -td "${FOLDER}"* 2>/dev/null | grep -v '_5G$\|_2G$' | head -n1 || true)
+    if [ -n "$candidate" ] && [ -d "$candidate" ]; then
+        TIMESTAMP=$(date +"%d-%m-%Y_%H-%M-%S")
+        NEW_NAME="${FOLDER}_${TIMESTAMP}_2G"
+        mv "$candidate" "$NEW_NAME"
+        echo "Moved $candidate to: $NEW_NAME"
+        mv load_connection_2G_ML.txt "$NEW_NAME/" 2>/dev/null || true
+    else
+        echo "Warning: folder '$FOLDER' not found for 2G phase, skipping rename (5G results preserved)"
+    fi
+fi
+
+
